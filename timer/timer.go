@@ -1,6 +1,7 @@
 package timer
 
 import (
+	"log"
 	"time"
 )
 
@@ -17,8 +18,9 @@ type Timer struct {
 	stopC chan struct{} // 定时器停止channel
 }
 
-var newTimer Timer
+var newTimer Timer // 全局唯一的定时器变量
 
+// 全局变量初始化
 func init() {
 	newTimer = Timer{
 		tasks: make(map[string]taskEntity),
@@ -40,7 +42,8 @@ func Add(taskName string, duration int64, f func()) bool {
 	return true
 }
 
-func Delete(taskName string) bool {
+// DeleteTask 删除任务
+func DeleteTask(taskName string) bool {
 	_, ok := newTimer.tasks[taskName]
 	if !ok {
 		return false
@@ -50,9 +53,32 @@ func Delete(taskName string) bool {
 	return true
 }
 
+// QueryTask 查询单个任务的剩余时间
+func QueryTask(taskName string) map[string]int64 {
+	task, ok := newTimer.tasks[taskName]
+	if !ok {
+		return nil
+	}
+
+	return map[string]int64{taskName: task.duration - time.Now().Unix()}
+}
+
+// QueryAllTasks 查询所有任务的剩余时间
+func QueryAllTasks() map[string]int64 {
+	returnMap := make(map[string]int64)
+
+	for taskName, taskEntity := range newTimer.tasks {
+		returnMap[taskName] = taskEntity.duration - time.Now().Unix()
+	}
+
+	return returnMap
+}
+
+// Start 定时器启动
 func Start() {
 	go func() {
 		ticker := time.NewTicker(time.Second)
+	loop:
 		for {
 			select {
 			case <-ticker.C:
@@ -63,12 +89,14 @@ func Start() {
 					}
 				}
 			case <-newTimer.stopC:
-				break
+				log.Println("timer is ending")
+				break loop
 			}
 		}
 	}()
 }
 
-func (newTimer *Timer) Stop() {
-
+// Stop 定时器停止
+func Stop() {
+	newTimer.stopC <- struct{}{}
 }

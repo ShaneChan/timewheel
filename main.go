@@ -2,19 +2,20 @@ package main
 
 import (
 	"log"
+	"strconv"
 	"time"
 	"timewheel/timer"
 )
 
 func main() {
-	timer.Add("test", 10, func() {
-		log.Println("你好世界")
-	})
+	for i := 0; i < 100000; i++ {
+		timer.Add("test"+strconv.Itoa(i), 5, func() {
+			time.Sleep(time.Second * 2)
+			log.Println("你好世界" + strconv.Itoa(i))
+		})
+	}
 
 	timer.Start()
-	timer.Add("test1", 20, func() {
-		log.Println("再见世界")
-	})
 
 	time.Sleep(time.Hour)
 }
